@@ -31,25 +31,27 @@ export const analyzeFoodImage = async (base64Image: string, user: UserProfile): 
   const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, "");
 
   const prompt = `
-    حلل صورة الطعام هذه.
-    بيانات المستخدم:
-    الاسم: ${user.name}
-    الوزن: ${user.weight} كجم
-    الطول: ${user.height} سم
-    العمر: ${user.age} سنة
+    أنت خبير تغذية عالمي. قم تحليل صورة الطعام هذه بدقة عالية.
+    
+    بيانات المستخدم (لتقديم نصيحة مخصصة):
+    - الاسم: ${user.name}
+    - الوزن: ${user.weight} كجم
+    - الطول: ${user.height} سم
+    - العمر: ${user.age} سنة
 
     المطلوب:
-    1. تعرف على نوع الطعام.
-    2. قدر السعرات الحرارية.
-    3. قدر القيم الغذائية (بروتين، كارب، دهون).
-    4. قدم نصيحة صحية قصيرة جداً ومخصصة لهذا المستخدم بناءً على سنه ووزنه.
+    1. تعرف على نوع الطعام ومكوناته.
+    2. قدر السعرات الحرارية الإجمالية.
+    3. قدر القيم الغذائية (بروتين، كارب، دهون) بالأرقام.
+    4. قدم نصيحة صحية مفيدة ومختصرة جداً موجهة لهذا المستخدم بأسلوب مشجع.
     
-    يجب أن يكون الرد باللغة العربية حصراً وبنسق JSON.
+    يجب أن يكون الرد بنسق JSON فقط.
   `;
 
   try {
+    // Using gemini-3-flash-preview as it is multimodal and optimized for text/image understanding
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-3-flash-preview',
       contents: {
         parts: [
           {
@@ -66,17 +68,17 @@ export const analyzeFoodImage = async (base64Image: string, user: UserProfile): 
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        temperature: 0.4, // Lower temperature for more factual estimation
+        temperature: 0.3, // Lower temperature for accuracy
       }
     });
 
     const text = response.text;
-    if (!text) throw new Error("No response from AI");
+    if (!text) throw new Error("لم يتم استلام رد من الخادم");
     
     return JSON.parse(text) as AnalysisResult;
 
   } catch (error) {
-    console.error("Gemini Analysis Error:", error);
-    throw new Error("حدث خطأ أثناء تحليل الصورة. حاول مرة أخرى.");
+    console.error("Gemini Analysis Error details:", error);
+    throw new Error("حدث خطأ أثناء الاتصال بخدمة التحليل. تأكد من اتصال الإنترنت.");
   }
 };
